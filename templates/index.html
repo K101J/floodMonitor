@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Monitor Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .navbar {
+            background: #1e293b;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 2px solid #334155;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #60a5fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #334155;
+        }
+        .card-header i {
+            font-size: 1.5rem;
+            color: #60a5fa;
+        }
+        .metric-value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #60a5fa;
+            margin-bottom: 0.5rem;
+        }
+        .unit {
+            font-size: 1.5rem;
+            color: #94a3b8;
+            margin-left: 0.5rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #334155;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        .status-normal { background: #10b981; }
+        .status-warning { background: #f59e0b; }
+        .status-critical { background: #ef4444; }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .last-updated {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        .alert-banner {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-weight: bold;
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+        .alert-critical {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+            animation: pulse 2s infinite;
+        }
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.2);
+            border: 2px solid #f59e0b;
+            color: #f59e0b;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-water"></i>
+            <span>Flood Monitor System - LIVE</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Alert Banner (shown only for warnings/critical) -->
+        <div id="alertBanner" class="alert-banner">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="alertText">Alert Message</span>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Water Level Card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-tint"></i>
+                    <h3>Water Level</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">
+                        <span id="waterLevel">0</span><span class="unit"> units</span>
+                    </div>
+                    <div class="metric-value" style="font-size: 2rem;">
+                        <span id="waterPercentage">0</span><span class="unit">%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Water Depth Card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-ruler-vertical"></i>
+                    <h3>Water Depth</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">
+                        <span id="waterDepth">0.0</span><span class="unit"> cm</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <div style="background: #334155; height: 200px; border-radius: 10px; position: relative;">
+                            <div id="depthFill" style="position: absolute; bottom: 0; width: 100%; background: #60a5fa; border-radius: 10px; transition: height 0.5s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>System Status</h3>
+                </div>
+                <div class="card-body">
+                    <div id="statusIndicator" class="status-indicator status-normal">
+                        <i class="fas fa-circle"></i>
+                        <span id="statusText">NORMAL</span>
+                    </div>
+                    <div class="last-updated">
+                        <i class="fas fa-clock"></i>
+                        Last updated: <span id="lastUpdated">Never</span>
+                    </div>
+                    <button onclick="updateData()" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">
+                        <i class="fas fa-sync-alt"></i> Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to fetch and display sensor data
+        async function updateData() {
+            try {
+                const response = await fetch('/api/sensor-data');
+                const data = await response.json();
+
+                // 1. Update all displayed numbers
+                document.getElementById('waterLevel').textContent = data.water_level;
+                document.getElementById('waterDepth').textContent = data.water_depth;
+                document.getElementById('waterPercentage').textContent = data.water_percentage;
+                document.getElementById('lastUpdated').textContent = data.last_updated;
+
+                // 2. Update progress bars and visual indicators
+                document.getElementById('progressFill').style.width = data.water_percentage + '%';
+                // Scale depth to the 200px container (55 cm max depth)
+                document.getElementById('depthFill').style.height = (data.water_depth / 55 * 100) + '%';
+
+                // 3. Update status colors and text
+                const statusElement = document.getElementById('statusIndicator');
+                const progressElement = document.getElementById('progressFill');
+                const alertBanner = document.getElementById('alertBanner');
+                const alertText = document.getElementById('alertText');
+
+                // Set color classes based on status
+                statusElement.className = `status-indicator status-${data.status}`;
+                progressElement.className = `progress-fill status-${data.status}`;
+                document.getElementById('depthFill').style.background = data.color;
+
+                // Update status text
+                document.getElementById('statusText').textContent = data.status.toUpperCase();
+
+                // 4. Show/Hide alerts
+                if (data.status === 'critical') {
+                    alertText.textContent = '🚨 FLOOD CRITICAL - Water level too high! Immediate action required.';
+                    alertBanner.className = 'alert-banner alert-critical';
+                    alertBanner.style.display = 'block';
+                } else if (data.status === 'warning') {
+                    alertText.textContent = '⚠️ WARNING - Rising water level detected. Monitor closely.';
+                    alertBanner.className = 'alert-banner alert-warning';
+                    alertBanner.style.display = 'block';
+                } else {
+                    // For 'normal' status, hide the alert banner
+                    alertBanner.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error('Error fetching sensor data:', error);
+                // Optional: Show an error on the dashboard
+                document.getElementById('statusText').textContent = 'ERROR';
+                document.getElementById('statusIndicator').className = 'status-indicator status-critical';
+            }
+        }
+
+        // Update data automatically every 3 seconds
+        setInterval(updateData, 3000);
+
+        // Load data immediately when page opens
+        updateData();
+    </script>
+</body>
+</html>
